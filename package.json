@@ -1,0 +1,11 @@
+{
+  "name": "multiplayer-pong",
+  "version": "1.0.0",
+  "main": "server.js",
+  "repository": "https://github.com/brunohbm/node-js-sockets-test.git",
+  "author": "Bruno Henrique <brunohbm23@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "socket.io": "4.5.2"
+  }
+}
