@@ -4,6 +4,7 @@ const context = canvas.getContext('2d');
 const socket = io('http://localhost:3000/')
 
 let paddleIndex = 0;
+let isReferee = false;
 
 let width = 500;
 let height = 700;
@@ -43,8 +44,8 @@ function renderIntro() {
   // Canvas Background
   context.fillStyle = 'black';
   context.fillRect(0, 0, width, height);
-  
-    // Intro Text
+
+  // Intro Text
   context.fillStyle = 'white';
   context.font = "32px Courier New";
   context.fillText("Waiting for opponent...", 20, (canvas.height / 2) - 30);
@@ -161,13 +162,15 @@ function animate() {
   window.requestAnimationFrame(animate);
 }
 
-// Start Game, Reset Everything
-function startGame() {
+function loadGame() {
   createCanvas();
   renderIntro();
   socket.emit('ready');
+}
 
-  paddleIndex = 0;
+// Start Game, Reset Everything
+function startGame() {
+  paddleIndex = isReferee ? 0 : 1;
   window.requestAnimationFrame(animate);
   canvas.addEventListener('mousemove', (e) => {
     playerMoved = true;
@@ -179,13 +182,25 @@ function startGame() {
       paddleX[paddleIndex] = width - paddleWidth;
     }
     // Hide Cursor
+
+    socket.emit('paddleMove', { xPosition: paddleX[paddleIndex] });
     canvas.style.cursor = 'none';
   });
 }
 
 // On Load
-startGame();
+loadGame();
 
 socket.on('connect', () => {
   console.log('Connected with ID:' + socket.id);
-})
+});
+
+socket.on('startGame', refereeId => {
+  isReferee = refereeId === socket.id;
+  startGame();
+});
+
+socket.on('paddleMove', paddleData => {
+    const opponentPaddleIndex = 1 - paddleIndex;
+    paddleX[opponentPaddleIndex] = paddleData.xPosition;
+});
