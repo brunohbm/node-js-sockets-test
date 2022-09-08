@@ -1,7 +1,7 @@
 // Canvas Related 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
-const socket = io('http://localhost:3000/')
+const socket = io('/pong')
 
 let paddleIndex = 0;
 let isReferee = false;
@@ -86,11 +86,20 @@ function renderCanvas() {
   context.fillText(score[1], 20, (canvas.height / 2) - 30);
 }
 
+function emmitBallMoviment() {
+  socket.emit('ballMove', {
+    ballX,
+    ballY,
+    score,
+  });
+}
+
 // Reset Ball to Center
 function ballReset() {
   ballX = width / 2;
   ballY = height / 2;
   speedY = 3;
+  emmitBallMoviment();
 }
 
 // Adjust Ball Movement
@@ -101,6 +110,7 @@ function ballMove() {
   if (playerMoved) {
     ballX += speedX;
   }
+  emmitBallMoviment();
 }
 
 // Determine What Ball Bounces Off, Score Points, Reset Ball
@@ -156,9 +166,11 @@ function ballBoundaries() {
 
 // Called Every Frame
 function animate() {
-  ballMove();
+  if (isReferee) {
+    ballMove();
+    ballBoundaries();
+  }
   renderCanvas();
-  ballBoundaries();
   window.requestAnimationFrame(animate);
 }
 
@@ -201,6 +213,12 @@ socket.on('startGame', refereeId => {
 });
 
 socket.on('paddleMove', paddleData => {
-    const opponentPaddleIndex = 1 - paddleIndex;
-    paddleX[opponentPaddleIndex] = paddleData.xPosition;
+  const opponentPaddleIndex = 1 - paddleIndex;
+  paddleX[opponentPaddleIndex] = paddleData.xPosition;
+});
+
+socket.on('ballMove', ballData => {
+  ballX = ballData.ballX;
+  ballY = ballData.ballY;
+  score = ballData.score;
 });
